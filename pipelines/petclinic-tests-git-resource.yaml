@@ -6,4 +6,6 @@ spec:
   type: git
   params:
   - name: url
-    value: https://github.com/siamaksade/spring-petclinic-gatling
+    value: https://gogs-peter-cicd-tools.apps.ocpcluster.peterho.internal/gogs/spring-petclinic-gatling.git
+  - name: sslVerify
+    value: 'false'

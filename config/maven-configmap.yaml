@@ -17,7 +17,7 @@ data:
         <mirror>
           <id>nexus</id>
           <name>nexus</name>
-          <url>http://nexus:8081/repository/maven-public/</url>
+          <url>http://nexus.peter-cicd-tools.svc.cluster.local:8081/repository/maven-public/</url>
           <mirrorOf>*</mirrorOf>
         </mirror>
       </mirrors>

@@ -13,7 +13,7 @@ spec:
     default: maven-settings
   - name: REPORTS_REPO_HOST
     description: The reports repository host based on https://github.com/chmouel/openshift-django-uploader
-    default: http://reports-repo:8080
+    default: http://reports-repo.peter-cicd-tools.svc.cluster.local:8080
   - name: REPORTS_REPO_USERNAME
     description: The reports repository username
     default: reports

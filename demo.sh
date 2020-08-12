@@ -42,9 +42,12 @@ while (( "$#" )); do
   esac
 done
 
-declare -r dev_prj="$PRJ_PREFIX-dev"
-declare -r stage_prj="$PRJ_PREFIX-stage"
-declare -r cicd_prj="$PRJ_PREFIX-cicd"
+# declare -r dev_prj="$PRJ_PREFIX-dev"
+# declare -r stage_prj="$PRJ_PREFIX-stage"
+# declare -r cicd_prj="$PRJ_PREFIX-cicd"
+
+declare -r deployment_prk="peter-cicd-pipeline-petclinic"
+declare -r cicd_prj="peter-cicd-tools"
 
 command.help() {
   cat <<-EOF
@@ -69,81 +72,106 @@ EOF
 command.install() {
   oc version >/dev/null 2>&1 || err "no oc binary found"
 
-  info "Creating namespaces $cicd_prj, $dev_prj, $stage_prj"
-  oc get ns $cicd_prj 2>/dev/null  || { 
-    oc new-project $cicd_prj 
+  # info "Creating namespaces $cicd_prj, $dev_prj, $stage_prj"
+  # oc get ns $cicd_prj 2>/dev/null  || { 
+  #   oc new-project $cicd_prj 
+  # }
+  # oc get ns $dev_prj 2>/dev/null  || { 
+  #   oc new-project $dev_prj
+  # }
+  # oc get ns $stage_prj 2>/dev/null  || { 
+  #   oc new-project $stage_prj 
+  # }
+  info "Creating namespaces $deployment_prk"
+  oc get ns $deployment_prk 2>/dev/null  || { 
+    oc new-project $deployment_prk 
   }
-  oc get ns $dev_prj 2>/dev/null  || { 
-    oc new-project $dev_prj
-  }
-  oc get ns $stage_prj 2>/dev/null  || { 
-    oc new-project $stage_prj 
-  }
-
-  info "Configure service account permissions for pipeline"
-  oc policy add-role-to-user edit system:serviceaccount:$cicd_prj:pipeline -n $dev_prj
-  oc policy add-role-to-user edit system:serviceaccount:$cicd_prj:pipeline -n $stage_prj
-
-  info "Deploying CI/CD infra to $cicd_prj namespace"
-  oc apply -f cd -n $cicd_prj
-  GOGS_HOSTNAME=$(oc get route gogs -o template --template='{{.spec.host}}' -n $cicd_prj)
-
-  info "Deploying pipeline and tasks to $cicd_prj namespace"
-  oc apply -f tasks -n $cicd_prj
-  oc apply -f config/maven-configmap.yaml -n $cicd_prj
-  oc apply -f pipelines/pipeline-pvc.yaml -n $cicd_prj
-  oc apply -f pipelines/petclinic-tests-git-resource.yaml -n $cicd_prj
-  sed "s/demo-dev/$dev_prj/g" pipelines/pipeline-deploy-dev.yaml | oc apply -f - -n $cicd_prj
-  sed "s/demo-dev/$dev_prj/g" pipelines/pipeline-deploy-stage.yaml | sed -E "s/demo-stage/$stage_prj/g" | oc apply -f - -n $cicd_prj
-  sed "s/demo-dev/$dev_prj/g" pipelines/petclinic-image-resource.yaml | oc apply -f - -n $cicd_prj
-  sed "s#https://github.com/siamaksade/spring-petclinic#http://$GOGS_HOSTNAME/gogs/spring-petclinic.git#g" pipelines/petclinic-git-resource.yaml | oc apply -f - -n $cicd_prj
-  sed "s#https://github.com/siamaksade/spring-petclinic-config#http://$GOGS_HOSTNAME/gogs/spring-petclinic-config.git#g" pipelines/petclinic-config-git-resource.yaml | oc apply -f - -n $cicd_prj
-  sed "s#https://github.com/siamaksade/spring-petclinic-gatling#http://$GOGS_HOSTNAME/gogs/spring-petclinic-gatling.git#g" pipelines/petclinic-tests-git-resource.yaml | oc apply -f - -n $cicd_prj
   
-  oc apply -f triggers/gogs-triggerbinding.yaml -n $cicd_prj
-  oc apply -f triggers/triggertemplate.yaml -n $cicd_prj
-  sed "s/demo-dev/$dev_prj/g" triggers/eventlistener.yaml | oc apply -f - -n $cicd_prj
+  # info "Configure service account permissions for pipeline"
+  # oc policy add-role-to-user edit system:serviceaccount:$cicd_prj:pipeline -n $dev_prj
+  # oc policy add-role-to-user edit system:serviceaccount:$cicd_prj:pipeline -n $stage_prj
 
-  info "Initiatlizing git repository in Gogs and configuring webhooks"
-  sed "s/@HOSTNAME/$GOGS_HOSTNAME/g" config/gogs-configmap.yaml | oc create -f - -n $cicd_prj
-  oc rollout status deployment/gogs -n $cicd_prj
-  oc create -f config/gogs-init-taskrun.yaml -n $cicd_prj
+  # info "Deploying CI/CD infra to $cicd_prj namespace"
+  # oc apply -f cd -n $cicd_prj
+  info "Deploying reports-repo to $cicd_prj namespace"
+  oc apply -f cd/reports-repo.yaml -n $cicd_prj
 
-  oc project $cicd_prj
+  # GOGS_HOSTNAME=$(oc get route gogs -o template --template='{{.spec.host}}' -n $cicd_prj)
 
-  cat <<-EOF
-
-############################################################################
-############################################################################
-
-  Demo is installed! Give it a few minutes to finish deployments and then:
-
-  1) Go to spring-petclinic Git repository in Gogs:
-     http://$GOGS_HOSTNAME/gogs/spring-petclinic.git
+  # info "Deploying pipeline and tasks to $cicd_prj namespace"
+  # oc apply -f tasks -n $cicd_prj
+  # oc apply -f config/maven-configmap.yaml -n $cicd_prj
+  # oc apply -f pipelines/pipeline-pvc.yaml -n $cicd_prj
+  # oc apply -f pipelines/petclinic-tests-git-resource.yaml -n $cicd_prj
+  # sed "s/demo-dev/$dev_prj/g" pipelines/pipeline-deploy-dev.yaml | oc apply -f - -n $cicd_prj
+  # sed "s/demo-dev/$dev_prj/g" pipelines/pipeline-deploy-stage.yaml | sed -E "s/demo-stage/$stage_prj/g" | oc apply -f - -n $cicd_prj
+  # sed "s/demo-dev/$dev_prj/g" pipelines/petclinic-image-resource.yaml | oc apply -f - -n $cicd_prj
+  # sed "s#https://github.com/siamaksade/spring-petclinic#http://$GOGS_HOSTNAME/gogs/spring-petclinic.git#g" pipelines/petclinic-git-resource.yaml | oc apply -f - -n $cicd_prj
+  # sed "s#https://github.com/siamaksade/spring-petclinic-config#http://$GOGS_HOSTNAME/gogs/spring-petclinic-config.git#g" pipelines/petclinic-config-git-resource.yaml | oc apply -f - -n $cicd_prj
+  # sed "s#https://github.com/siamaksade/spring-petclinic-gatling#http://$GOGS_HOSTNAME/gogs/spring-petclinic-gatling.git#g" pipelines/petclinic-tests-git-resource.yaml | oc apply -f - -n $cicd_prj
   
-  2) Log into Gogs with username/password: gogs/gogs
+  info "Deploying pipeline and tasks to $deployment_prk namespace"
+  oc apply -f tasks -n $deployment_prk
+  oc apply -f config/maven-configmap.yaml -n $deployment_prk
+  oc apply -f pipelines/pipeline-pvc.yaml -n $deployment_prk
+  # oc apply -f pipelines/petclinic-tests-git-resource.yaml -n $deployment_prk  
+  sed "s/demo-dev/$deployment_prk/g" pipelines/pipeline-deploy-dev.yaml | oc apply -f - -n $deployment_prk
+  sed "s/demo-dev/$deployment_prk/g" pipelines/petclinic-image-resource.yaml | oc apply -f - -n $deployment_prk  # MAY NEED TO CHANGE IF USE QUAY  
+  oc apply -f pipelines/petclinic-git-resource.yaml -n $deployment_prk
+  oc apply -f pipelines/petclinic-config-git-resource.yaml -n $deployment_prk
+  oc apply -f pipelines/petclinic-tests-git-resource.yaml -n $deployment_prk # MAY NEED TO CHANGE GIT SOURCE LATER
+
+  # peter-cicd-tools.svc.cluster.local
+  # peter-cicd-tools.svc.cluster.local
+
+  # oc apply -f triggers/gogs-triggerbinding.yaml -n $cicd_prj
+  # oc apply -f triggers/triggertemplate.yaml -n $cicd_prj
+  # sed "s/demo-dev/$dev_prj/g" triggers/eventlistener.yaml | oc apply -f - -n $cicd_prj
+
+  oc apply -f triggers/gogs-triggerbinding.yaml -n $deployment_prk
+  oc apply -f triggers/triggertemplate.yaml -n $deployment_prk
+  oc apply -f triggers/eventlistener.yaml -n $deployment_prk
+
+  # info "Initiatlizing git repository in Gogs and configuring webhooks"
+  # sed "s/@HOSTNAME/$GOGS_HOSTNAME/g" config/gogs-configmap.yaml | oc create -f - -n $cicd_prj
+  # oc rollout status deployment/gogs -n $cicd_prj
+  # oc create -f config/gogs-init-taskrun.yaml -n $cicd_prj
+
+  # oc project $deployment_prk
+
+#   cat <<-EOF
+
+# ############################################################################
+# ############################################################################
+
+#   Demo is installed! Give it a few minutes to finish deployments and then:
+
+#   1) Go to spring-petclinic Git repository in Gogs:
+#      http://$GOGS_HOSTNAME/gogs/spring-petclinic.git
+  
+#   2) Log into Gogs with username/password: gogs/gogs
       
-  3) Edit a file in the repository and commit to trigger the pipeline
+#   3) Edit a file in the repository and commit to trigger the pipeline
 
-  4) Check the pipeline run logs in Dev Console or Tekton CLI:
+#   4) Check the pipeline run logs in Dev Console or Tekton CLI:
      
-    \$ tkn pipeline logs petclinic-deploy-dev -f -n $cicd_prj
+#     \$ tkn pipeline logs petclinic-deploy-dev -f -n $cicd_prj
 
   
-  You can find further details at:
+#   You can find further details at:
   
-  Gogs Git Server: http://$GOGS_HOSTNAME/explore/repos
-  PipelineRun Reports: http://$(oc get route reports-repo -o template --template='{{.spec.host}}' -n $cicd_prj)
-  SonarQube: https://$(oc get route sonarqube -o template --template='{{.spec.host}}' -n $cicd_prj)
-  Sonatype Nexus: http://$(oc get route nexus -o template --template='{{.spec.host}}' -n $cicd_prj)
+#   Gogs Git Server: http://$GOGS_HOSTNAME/explore/repos
+#   PipelineRun Reports: http://$(oc get route reports-repo -o template --template='{{.spec.host}}' -n $cicd_prj)
+#   SonarQube: https://$(oc get route sonarqube -o template --template='{{.spec.host}}' -n $cicd_prj)
+#   Sonatype Nexus: http://$(oc get route nexus -o template --template='{{.spec.host}}' -n $cicd_prj)
 
-############################################################################
-############################################################################
-EOF
+# ############################################################################
+# ############################################################################
+# EOF
 }
 
 command.start() {
-  oc create -f runs/pipeline-deploy-dev-run.yaml -n $cicd_prj
+  oc create -f runs/pipeline-deploy-dev-run.yaml -n $deployment_prk
 }
 
 command.uninstall() {
